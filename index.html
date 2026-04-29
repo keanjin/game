@@ -315,7 +315,7 @@ const PADDLE_W = 100;
 const PADDLE_H = 12;
 const PADDLE_Y = H - 50;
 const BALL_R   = 7;
-const BASE_SPEED = 5;
+const BASE_SPEED = 7;
 
 let paddleX = W / 2 - PADDLE_W / 2;
 let ball = { x: 0, y: 0, vx: 0, vy: 0 };
@@ -331,6 +331,7 @@ let maxCombo = 0;
 let wave = 1;
 let gameState = 'waiting';   // waiting | playing | paused | over
 let keys = {};
+let lastTime = 0;            // 上一帧时间戳（用于 delta time）
 
 // ============================================================
 //  砖块颜色池（随机抽取）
@@ -432,8 +433,9 @@ function initGame(fullReset) {
 function launchBall() {
   if (!ballOnPaddle) return;
   ballOnPaddle = false;
-  // 波次越高球速越快
-  const speed = BASE_SPEED + (wave - 1) * 0.4;
+  // 速度 = 基础速度 + 波次加成 + 分数加成（每50分提速0.3）
+  const scoreBonus = Math.floor(score / 50) * 0.3;
+  const speed = BASE_SPEED + (wave - 1) * 0.4 + scoreBonus;
   const angle = (Math.random() - 0.5) * Math.PI * 0.45 - Math.PI / 2;
   ball.vx = Math.cos(angle) * speed;
   ball.vy = Math.sin(angle) * speed;
@@ -474,11 +476,12 @@ function spawnBrickParticles(b) {
 // ============================================================
 //  更新逻辑
 // ============================================================
-function update() {
+function update(dt) {
+  // dt: 归一化时间增量，60fps 时 dt=1，30fps 时 dt≈2
   // 挡板（键盘）
-  const P_SPEED = 8;
-  if (keys['ArrowLeft']  || keys['a']) paddleX -= P_SPEED;
-  if (keys['ArrowRight'] || keys['d']) paddleX += P_SPEED;
+  const P_SPEED = 8;       // px/(60fps帧)
+  if (keys['ArrowLeft']  || keys['a']) paddleX -= P_SPEED * dt;
+  if (keys['ArrowRight'] || keys['d']) paddleX += P_SPEED * dt;
   paddleX = Math.max(0, Math.min(W - PADDLE_W, paddleX));
 
   // 球吸附挡板
@@ -489,8 +492,8 @@ function update() {
 
   // 球移动
   if (!ballOnPaddle && gameState === 'playing') {
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
 
     // 墙壁反弹
     if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
@@ -566,13 +569,13 @@ function update() {
     }
   }
 
-  // 粒子衰减
+  // 粒子衰减（与帧率解耦）
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.life -= 0.025;
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.05;
+    p.life -= 0.025 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 0.05 * dt;
     if (p.life <= 0) particles.splice(i, 1);
   }
 }
@@ -688,8 +691,15 @@ function roundRect(x, y, w, h, r) {
 // ============================================================
 //  游戏循环
 // ============================================================
-function loop() {
-  update();
+function loop(timestamp) {
+  // 计算 delta time（归一化到 60fps = 1.0）
+  if (lastTime === 0) lastTime = timestamp;
+  let dt = (timestamp - lastTime) / (1000 / 60);  // 60fps 基准
+  // 防止切后台回来时 dt 爆炸（上限 4，即最低 15fps）
+  if (dt > 4) dt = 4;
+  lastTime = timestamp;
+
+  update(dt);
   draw();
   requestAnimationFrame(loop);
 }
