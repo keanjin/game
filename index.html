@@ -267,6 +267,8 @@
       <span style="color:#2a2a3a;">|</span>
       <span class="key active-key">鼠标</span><span style="color:#444;">移动</span>
       <span style="color:#2a2a3a;">|</span>
+      <span class="key active-key">触屏拖动</span><span style="color:#444;">移动+发射</span>
+      <span style="color:#2a2a3a;">|</span>
       <span class="key">Space</span><span style="color:#444;">发射/暂停</span>
       <span style="color:#2a2a3a;">|</span>
       <span class="key">Space</span><span style="color:#444;">GAME OVER 时开始下一局</span>
@@ -763,15 +765,40 @@ document.addEventListener('keydown', e => {
   }
 });
 document.addEventListener('keyup', e => { keys[e.key] = false; });
-
-canvas.addEventListener('mousemove', e => {
+// 鼠标移动 → 挡板跟随
+function movePaddleTo(clientX) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = W / rect.width;
-  paddleX = Math.max(0, Math.min(W - PADDLE_W, (e.clientX - rect.left) * scaleX - PADDLE_W / 2));
+  paddleX = Math.max(0, Math.min(W - PADDLE_W, (clientX - rect.left) * scaleX - PADDLE_W / 2));
   if (ballOnPaddle) {
     ball.x = paddleX + PADDLE_W / 2;
     ball.y = PADDLE_Y - BALL_R;
   }
+}
+
+canvas.addEventListener('mousemove', e => {
+  movePaddleTo(e.clientX);
+});
+
+// 触摸事件 — 手指拖动挡板
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  movePaddleTo(touch.clientX);
+  // 如果球在挡板上，触摸即发射
+  if (gameState === 'playing' && ballOnPaddle) {
+    launchBall();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  movePaddleTo(touch.clientX);
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
 });
 
 canvas.addEventListener('click', () => {
