@@ -17,7 +17,6 @@
     font-family: 'Courier New', 'Source Code Pro', monospace;
     overflow-x: hidden;
     user-select: none;
-    cursor: none;
   }
 
   /* ===== 主布局：横向（桌面端）===== */
@@ -85,6 +84,7 @@
     border: 1px solid #1a1a2e;
     border-radius: 6px;
     background: #0b0b18;
+    cursor: none;
     box-shadow:
       0 0 40px rgba(80,0,200,0.12),
       inset 0 0 80px rgba(0,0,0,0.6);
@@ -823,5 +823,21 @@ restartBtn.addEventListener('click', () => startGame(true));
 startGame(true);
 loop();
 </script>
+
+<!-- 为我发电 -->
+<div style="text-align:center;padding:2rem 0 0.5rem;">
+    <a href="https://ifdian.net/a/VC4ED" target="_blank" rel="noopener" style="
+        display:inline-flex;align-items:center;gap:0.5rem;
+        padding:0.7rem 1.8rem;border-radius:50px;
+        background:linear-gradient(135deg,#f97316,#ec4899);
+        color:#fff;font-weight:700;font-size:0.95rem;text-decoration:none;
+        transition:transform 0.2s,box-shadow 0.2s;
+        box-shadow:0 2px 12px rgba(249,115,22,0.3);
+    " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 20px rgba(236,72,153,0.4)'"
+       onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 12px rgba(249,115,22,0.3)'">
+        ⚡ 为我发电
+    </a>
+</div>
+
 </body>
 </html>
